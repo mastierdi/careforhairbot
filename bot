@@ -1,1 +1,29 @@
+from telegram import Update
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
+# Замість 'YOUR_TOKEN' введи отриманий від @BotFather токен
+TOKEN = '6648249522:AAEGslP85Ws1sO7Vz83Eu7-QH9kiDpgMQI0'
+
+def start(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text('Привіт! Я твій чат-бот.')
+
+def echo(update: Update, context: CallbackContext) -> None:
+    # Відправляє отримане повідомлення користувачу
+    update.message.reply_text(update.message.text)
+
+def main() -> None:
+    updater = Updater(TOKEN)
+
+    # Реєстрація обробників команд та повідомлень
+    dp = updater.dispatcher
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
+
+    # Запуск бота
+    updater.start_polling()
+
+    # Запуск в режимі блокування (використовуй Ctrl+C для зупинки бота)
+    updater.idle()
+
+if __name__ == '__main__':
+    main()
