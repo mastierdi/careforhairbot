@@ -1,28 +1,40 @@
+from telegram.ext import Updater, MessageHandler, Filters, CallbackContext
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
-# Замість 'YOUR_TOKEN' введи отриманий від @BotFather токен
-TOKEN = '6648249522:AAEGslP85Ws1sO7Vz83Eu7-QH9kiDpgMQI0'
+# Ваш токен та ID адміністратора
+TOKEN = "6648249522:AAEGslP85Ws1sO7Vz83Eu7-QH9kiDpgMQI0"
+ADMIN_ID = 738059686
 
 def start(update: Update, context: CallbackContext) -> None:
-    update.message.reply_text('Привіт! Я твій чат-бот.')
+    update.message.reply_text('Привіт! Ви можете писати мені повідомлення, і я перешлю їх адміністратору.')
 
-def echo(update: Update, context: CallbackContext) -> None:
-    # Відправляє отримане повідомлення користувачу
-    update.message.reply_text(update.message.text)
+def forward_to_admin(update: Update, context: CallbackContext) -> None:
+    user = update.message.from_user
+    message_text = update.message.text
+    context.bot.send_message(ADMIN_ID, f"Від {user.full_name} ({user.id}):\n\n{message_text}")
 
-def main() -> None:
+def reply_to_user(update: Update, context: CallbackContext) -> None:
+    # Отримуємо повідомлення від адміністратора та пересилаємо його користувачеві
+    admin_reply = update.message.text
+    user_id = context.user_data.get('user_to_reply', None)
+
+    if user_id:
+        context.bot.send_message(user_id, admin_reply)
+        update.message.reply_text("Відповідь відправлено користувачеві.")
+        context.user_data['user_to_reply'] = None
+    else:
+        update.message.reply_text("Немає користувача для відповіді.")
+
+def main():
     updater = Updater(TOKEN)
-
-    # Реєстрація обробників команд та повідомлень
     dp = updater.dispatcher
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
 
-    # Запуск бота
+    # Додаємо обробники повідомлень
+    dp.add_handler(MessageHandler(Filters.TEXT & ~Filters.COMMAND, forward_to_admin))
+    dp.add_handler(MessageHandler(Filters.TEXT, reply_to_user))
+    dp.add_handler(MessageHandler(Filters.COMMAND, start))
+
     updater.start_polling()
-
-    # Запуск в режимі блокування (використовуй Ctrl+C для зупинки бота)
     updater.idle()
 
 if __name__ == '__main__':
